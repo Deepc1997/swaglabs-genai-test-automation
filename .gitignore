@@ -1,0 +1,8 @@
+target/
+test-output/
+screenshots/
+*.log
+*.class
+.idea/
+.project
+.settings/

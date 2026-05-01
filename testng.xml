@@ -1,0 +1,17 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<suite name="SwagLabs Suite" verbose="1">
+
+    <test name="Login Tests">
+        <classes>
+            <class name="com.deep.qa.swaglabs_testing.tests.SwagLabsLoginTest"/>
+        </classes>
+    </test>
+
+    <test name="Cart Tests">
+        <classes>
+            <class name="com.deep.qa.swaglabs_testing.tests.SwagLabsCartTest"/>
+        </classes>
+    </test>
+
+</suite>
