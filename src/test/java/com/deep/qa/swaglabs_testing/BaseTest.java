@@ -19,7 +19,7 @@ import com.aventstack.extentreports.ExtentTest;
 import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
 import java.lang.reflect.Method;
-
+import io.github.bonigarcia.wdm.WebDriverManager;
 
 public class BaseTest {
 
@@ -45,7 +45,7 @@ public class BaseTest {
         }
     }
 
-    @BeforeMethod
+/*    @BeforeMethod
     public void setUp(Method method) {
 
         if (extent == null) {
@@ -60,7 +60,26 @@ public class BaseTest {
 
         test.set(extent.createTest(method.getName()));
     }
+*/
+    
+    
+    @BeforeMethod
+    public void setUp(Method method) {
 
+        extent = ExtentManager.getExtentReports();
+
+        WebDriverManager.chromedriver().setup();   // ✅ ADD THIS
+
+        WebDriver localDriver = new ChromeDriver(); // keep this
+
+        driver.set(localDriver);
+
+        getDriver().manage().window().maximize();
+        getDriver().get(ConfigReader.get("url"));
+
+        test.set(extent.createTest(method.getName()));
+    }
+    
     @AfterMethod
     public void tearDown(ITestResult result) {
 
