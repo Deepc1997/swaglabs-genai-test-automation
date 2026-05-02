@@ -20,6 +20,7 @@ import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
 import java.lang.reflect.Method;
 import io.github.bonigarcia.wdm.WebDriverManager;
+import org.openqa.selenium.chrome.ChromeOptions;
 
 public class BaseTest {
 
@@ -44,6 +45,34 @@ public class BaseTest {
             throw new RuntimeException("ExtentReports NOT initialized");
         }
     }
+    
+    
+    @BeforeMethod
+    public void setUp(Method method) {
+
+        if (extent == null) {
+            extent = ExtentManager.getExtentReports();
+        }
+
+        // ✅ FIX: Headless browser setup for CI + local compatibility
+        ChromeOptions options = new ChromeOptions();
+
+        // run headless in CI (safe for local too if needed)
+        options.addArguments("--headless=new");
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--window-size=1920,1080");
+
+        WebDriver localDriver = new ChromeDriver(options);
+        driver.set(localDriver);
+
+        getDriver().manage().window().maximize();
+        getDriver().get(ConfigReader.get("url"));
+
+        test.set(extent.createTest(method.getName()));
+    }
+    
+    
 
 /*    @BeforeMethod
     public void setUp(Method method) {
@@ -62,7 +91,7 @@ public class BaseTest {
     }
 */
     
-    
+/*    
     @BeforeMethod
     public void setUp(Method method) {
 
@@ -79,7 +108,7 @@ public class BaseTest {
 
         test.set(extent.createTest(method.getName()));
     }
-    
+*/    
     @AfterMethod
     public void tearDown(ITestResult result) {
 
