@@ -29,7 +29,7 @@ jobs:
         run: mvn clean compile
 
       - name: Run TestNG tests
-        run: mvn test  -Dsurefire.suiteXmlFiles=testng.xml
+        run: mvn test  -DsuiteXmlFiles=testng.xml
 
       - name: Upload test reports
         uses: actions/upload-artifact@v4
