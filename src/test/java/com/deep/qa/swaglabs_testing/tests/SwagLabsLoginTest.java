@@ -1,52 +1,26 @@
 package com.deep.qa.swaglabs_testing.tests;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-
 import com.deep.qa.swaglabs_testing.BaseTest;
 import com.deep.qa.swaglabs_testing.HomePage;
 import com.deep.qa.swaglabs_testing.LoginPage;
 import com.deep.qa.swaglabs_testing.utils.JsonReader;
-
+import org.testng.Assert;
 import org.testng.annotations.DataProvider;
-
-
-
+import org.testng.annotations.Test;
 
 public class SwagLabsLoginTest extends BaseTest {
 
-    
-    
     @DataProvider(name = "loginData")
     public Object[][] getLoginData() {
 
-        Object[][] data = JsonReader.getLoginData(
+        return JsonReader.getLoginData(
                 System.getProperty("user.dir") +
                         "/src/test/resources/testdata/loginData.json"
         );
-
-        System.out.println("DATA PROVIDER SIZE = " + data.length);
-
-        return data;
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
     @Test(dataProvider = "loginData")
-    public void loginTest(String username, String password) {
+    public void loginTest(String username, String password, boolean expected) {
 
         getTest().info("User: " + username);
 
@@ -55,21 +29,17 @@ public class SwagLabsLoginTest extends BaseTest {
 
         loginPage.login(username, password);
 
-        boolean result = homePage.isLoginSuccessful();
+        boolean actual = homePage.isLoginSuccessful();
 
-        getTest().info("Result: " + result);
+        getTest().info("Actual Result: " + actual);
+        getTest().info("Expected Result: " + expected);
 
-        Assert.assertTrue(result, "Login failed for: " + username);
+        Assert.assertEquals(actual, expected,
+                "Mismatch for user: " + username);
 
-        getTest().pass("Completed: " + username);
+        getTest().pass("Test completed for: " + username);
     }
 }
-
-
-
-
-
-
 
 
 

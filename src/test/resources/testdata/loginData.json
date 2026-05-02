@@ -1,19 +1,22 @@
 [
   {
     "username": "standard_user",
-    "password": "secret_sauce"
+    "password": "secret_sauce",
+    "expected": true
   },
   {
     "username": "locked_out_user",
-    "password": "secret_sauce"
+    "password": "secret_sauce",
+    "expected": false
   },
   {
     "username": "problem_user",
-    "password": "secret_sauce"
+    "password": "secret_sauce",
+    "expected": true
   },
   {
     "username": "abc",
-    "password": "secret_sauce"
+    "password": "secret_sauce",
+    "expected": false
   }
-
 ]

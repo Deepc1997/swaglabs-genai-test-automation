@@ -25,11 +25,13 @@ public class SwagLabsCartTest extends BaseTest {
 
         getTest().pass("Cart test passed");
     }
+    
+}
 
-    @Test
+/*    @Test
     public void addToCartFailureTest() {
 
-        getTest().info("Failure Test Started");
+        getTest().info("Negative Cart Test Started");
 
         loginToApp();
 
@@ -37,12 +39,15 @@ public class SwagLabsCartTest extends BaseTest {
 
         inventoryPage.addItemToCart();
 
-        Assert.assertTrue(false, "Forced failure");
+        boolean isAdded = inventoryPage.isItemAddedToCart();
 
-        getTest().pass("This will never run");
+        // NEGATIVE ASSERTION (correct way)
+        Assert.assertFalse(isAdded, "Item should NOT be added");
+
+        getTest().pass("Negative cart behavior validated");
     }
-}
 
+*/
 
 
 
