@@ -26,6 +26,12 @@ public class SwagLabsCartTest extends BaseTest {
         getTest().pass("Cart test passed");
     }
     
+    
+    @Test
+    public void sanityCartCheck() {
+        System.out.println("CART CLASS LOADED");
+    }
+    
 }
 
 /*    @Test

@@ -3,7 +3,8 @@ package com.deep.qa.swaglabs_testing.tests;
 import com.deep.qa.swaglabs_testing.BaseTest;
 import com.deep.qa.swaglabs_testing.HomePage;
 import com.deep.qa.swaglabs_testing.LoginPage;
-import com.deep.qa.swaglabs_testing.utils.JsonReader;
+import com.deep.qa.swaglabs_testing.utils.AIDataGenerator;
+
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -12,12 +13,134 @@ public class SwagLabsLoginTest extends BaseTest {
 
     @DataProvider(name = "loginData")
     public Object[][] getLoginData() {
-
-        return JsonReader.getLoginData(
-                System.getProperty("user.dir") +
-                        "/src/test/resources/testdata/loginData.json"
-        );
+        return AIDataGenerator.generateLoginData();
     }
+
+    @Test(dataProvider = "loginData")
+    public void loginTest(String username, String password, String expected) {
+
+        getTest().info("User: " + username);
+
+        LoginPage loginPage = new LoginPage(getDriver());
+        HomePage homePage = new HomePage(getDriver());
+
+        loginPage.login(username, password);
+
+        boolean actualResult = homePage.isLoginSuccessful();
+
+        getTest().info("Expected: " + expected);
+        getTest().info("Actual: " + actualResult);
+        
+        
+        
+        
+        getTest().info("User: " + username);
+        System.out.println("AI DATA → " + username + " | " + password + " | " + expected);
+        
+        
+        
+
+        if (expected.equalsIgnoreCase("SUCCESS")) {
+            Assert.assertTrue(actualResult, "Login should succeed for: " + username);
+        } else {
+            Assert.assertFalse(actualResult, "Login should fail for: " + username);
+        }
+
+        getTest().pass("Test completed: " + username);
+    }
+
+    @Test
+    public void sanityLoginCheck() {
+        System.out.println("LOGIN CLASS LOADED");
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//package com.deep.qa.swaglabs_testing.tests;
+//
+//import com.deep.qa.swaglabs_testing.BaseTest;
+//import com.deep.qa.swaglabs_testing.HomePage;
+//import com.deep.qa.swaglabs_testing.LoginPage;
+//import com.deep.qa.swaglabs_testing.utils.AIDataGenerator;
+//import com.deep.qa.swaglabs_testing.utils.JsonReader;
+//import org.testng.Assert;
+//import org.testng.annotations.DataProvider;
+//import org.testng.annotations.Test;
+//
+//public class SwagLabsLoginTest extends BaseTest {
+//
+///*	
+//    @DataProvider(name = "loginData")
+//    public Object[][] getLoginData() {
+//
+//        return JsonReader.getLoginData(
+//                System.getProperty("user.dir") +
+//                        "/src/test/resources/testdata/loginData.json"
+//        );
+//    }
+//*/
+//	
+//	
+//	@DataProvider(name = "loginData")
+//	public Object[][] getLoginData() {
+//
+//	    return JsonReader.getLoginData(
+//	            System.getProperty("user.dir") +
+//	            "/src/test/resources/testdata/loginData.json"
+//	    );
+//	    
+//	}
+//
+//
+//	@Test(dataProvider = "loginData")
+//    public void loginTest(String username, String password, String expected) {
+//
+//        getTest().info("User: " + username);
+//
+//        LoginPage loginPage = new LoginPage(getDriver());
+//        HomePage homePage = new HomePage(getDriver());
+//
+//        loginPage.login(username, password);
+//
+//        boolean actualResult = homePage.isLoginSuccessful();
+//
+//        getTest().info("Expected: " + expected);
+//        getTest().info("Actual: " + actualResult);
+//
+//        if (expected.equalsIgnoreCase("SUCCESS")) {
+//            Assert.assertTrue(actualResult, "Login should succeed for: " + username);
+//        } else {
+//            Assert.assertFalse(actualResult, "Login should fail for: " + username);
+//        }
+//
+//        getTest().pass("Test completed: " + username);
+//    }
+//	
+//	
+//	@Test
+//	public void sanityLoginCheck() {
+//	    System.out.println("LOGIN CLASS LOADED");
+//	}
+//	
+//	
+//}
+//	
+	
+	
+/*	
 
     @Test(dataProvider = "loginData")
     public void loginTest(String username, String password, boolean expected) {
@@ -40,7 +163,7 @@ public class SwagLabsLoginTest extends BaseTest {
         getTest().pass("Test completed for: " + username);
     }
 }
-
+*/
 
 
 //public class SwagLabsLoginTest extends BaseTest{

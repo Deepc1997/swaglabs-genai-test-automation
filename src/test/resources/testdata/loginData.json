@@ -1,22 +1,23 @@
-[
-  {
-    "username": "standard_user",
-    "password": "secret_sauce",
-    "expected": true
-  },
-  {
-    "username": "locked_out_user",
-    "password": "secret_sauce",
-    "expected": false
-  },
-  {
-    "username": "problem_user",
-    "password": "secret_sauce",
-    "expected": true
-  },
-  {
-    "username": "abc",
-    "password": "secret_sauce",
-    "expected": false
-  }
-]
+//[
+//  {
+//    "username": "standard_user",
+//    "password": "secret_sauce",
+//    "expected": "SUCCESS"
+//  },
+//  {
+//    "username": "locked_out_user",
+//    "password": "secret_sauce",
+//    "expected": "FAIL"
+//  },
+//  {
+//    "username": "problem_user",
+//    "password": "secret_sauce",
+//    "expected": "SUCCESS"
+//  },
+//  {
+//    "username": "abc",
+//    "password": "secret_sauce",
+//    "expected": "FAIL"
+//  }
+//]
+

@@ -9,6 +9,7 @@ import org.testng.annotations.BeforeMethod;
 import com.deep.qa.swaglabs_testing.config.ConfigReader;
 
 import com.deep.qa.swaglabs_testing.reports.ExtentManager;
+import com.deep.qa.swaglabs_testing.utils.AIDataGenerator;
 import com.deep.qa.swaglabs_testing.utils.ScreenshotUtil;
 import com.aventstack.extentreports.ExtentReports;
 import com.aventstack.extentreports.ExtentReports;
@@ -39,6 +40,8 @@ public class BaseTest {
 
     @BeforeSuite
     public void beforeSuite() {
+    	//AIDataGenerator.generateIfNeeded();
+    	System.out.println("🧠 AI DATA SOURCE: OpenAI API (fallback enabled if API fails)");
         extent = ExtentManager.getExtentReports();
 
         if (extent == null) {
@@ -46,6 +49,7 @@ public class BaseTest {
         }
     }
     
+ 
     
     @BeforeMethod
     public void setUp(Method method) {
