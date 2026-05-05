@@ -14,46 +14,57 @@ public class AIDataGenerator {
     public static Object[][] generateLoginData() {
 
         try {
-            System.out.println("🔥 CALLING OPENAI API...");
+            System.out.println("🔥 CALLING GEMINI API...");
 
-            String apiKey = System.getenv("OPENAI_API_KEY");
-            
+            String apiKey = System.getenv("GEMINI_API_KEY");
+
             System.out.println("API KEY = " + apiKey);
 
             if (apiKey == null || apiKey.isEmpty()) {
                 throw new RuntimeException("API KEY missing");
             }
 
-            URL url = new URL("https://api.openai.com/v1/chat/completions");
+            // ✅ CORRECT GEMINI ENDPOINT
+            //URL url = new URL("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey.trim());
+            URL url = new URL(
+            	    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" 
+            	    + apiKey.trim()
+            	);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
             conn.setRequestMethod("POST");
-            conn.setRequestProperty("Authorization", "Bearer " + apiKey);
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setDoOutput(true);
 
             String prompt =
-                    "Generate EXACTLY 3 login test cases in STRICT JSON array format. " +
-                    "Each object must contain username, password, expected (SUCCESS or FAIL). " +
-                    "Return ONLY JSON.";
+                    "Generate EXACTLY 3 login test cases in STRICT JSON ARRAY format. " +
+                    "Each object must contain: username, password, expected (SUCCESS or FAIL). " +
+                    "Return ONLY JSON. No explanation.";
 
             String body = "{"
-                    + "\"model\":\"gpt-3.5-turbo\","
-                    + "\"messages\":[{\"role\":\"user\",\"content\":\"" + prompt + "\"}]"
+                    + "\"contents\":[{"
+                    + "\"parts\":[{"
+                    + "\"text\":\"" + prompt + "\""
+                    + "}]"
+                    + "}]"
                     + "}";
 
             conn.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
-            
-            System.out.println("RESPONSE CODE = " + conn.getResponseCode());
 
             int responseCode = conn.getResponseCode();
+
+            System.out.println("RESPONSE CODE = " + responseCode);
 
             BufferedReader br;
 
             if (responseCode >= 200 && responseCode < 300) {
-                br = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
+                br = new BufferedReader(
+                        new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8)
+                );
             } else {
-                br = new BufferedReader(new InputStreamReader(conn.getErrorStream(), StandardCharsets.UTF_8));
+                br = new BufferedReader(
+                        new InputStreamReader(conn.getErrorStream(), StandardCharsets.UTF_8)
+                );
             }
 
             StringBuilder response = new StringBuilder();
@@ -65,24 +76,33 @@ public class AIDataGenerator {
 
             br.close();
 
+            System.out.println("🔥 RAW RESPONSE:");
+            System.out.println(response);
+
             if (responseCode != 200) {
-                throw new RuntimeException("API failed: " + response.toString());
+                throw new RuntimeException("API failed: " + response);
             }
 
+            // ✅ GEMINI RESPONSE PARSING (IMPORTANT FIX)
             JSONObject json = new JSONObject(response.toString());
 
-            String content = json.getJSONArray("choices")
+            String content = json
+                    .getJSONArray("candidates")
                     .getJSONObject(0)
-                    .getJSONObject("message")
-                    .getString("content");
+                    .getJSONObject("content")
+                    .getJSONArray("parts")
+                    .getJSONObject(0)
+                    .getString("text");
 
-            // 🔥 CLEAN JSON (remove weird formatting if AI adds text)
             content = content.trim();
 
+            // safety cleanup (in case AI adds extra text)
             if (!content.startsWith("[")) {
                 int start = content.indexOf("[");
                 int end = content.lastIndexOf("]");
-                content = content.substring(start, end + 1);
+                if (start != -1 && end != -1) {
+                    content = content.substring(start, end + 1);
+                }
             }
 
             JSONArray arr = new JSONArray(content);
@@ -98,22 +118,11 @@ public class AIDataGenerator {
             }
 
             return data;
-            
-            
-            
+
         } catch (Exception e) {
 
-            System.out.println("🔥 OPENAI API CALL FAILED");
-
+            System.out.println("🔥 AI API FAILED → USING FALLBACK DATA");
             System.out.println("Reason: " + e.getMessage());
-
-            if (e.getMessage() != null && e.getMessage().contains("insufficient_quota")) {
-                System.out.println("❌ ISSUE: OpenAI quota exhausted (billing required or free credits ended)");
-            }
-
-            System.out.println("➡️ Switching to fallback test data so tests can continue");
-
-            e.printStackTrace();
 
             return new Object[][]{
                     {"standard_user", "secret_sauce", "SUCCESS"},
@@ -121,23 +130,6 @@ public class AIDataGenerator {
                     {"problem_user", "secret_sauce", "SUCCESS"}
             };
         }
-            
-            
-            
-
-//        } catch (Exception e) {
-//
-//            System.out.println("⚠️ AI FAILED → USING FALLBACK DATA");
-//            e.printStackTrace();
-//                      
-//
-//            // 🔥 FALLBACK (GUARANTEED WORKING)
-//            return new Object[][]{
-//                    {"standard_user", "secret_sauce", "SUCCESS"},
-//                    {"locked_out_user", "secret_sauce", "FAIL"},
-//                    {"problem_user", "secret_sauce", "SUCCESS"}
-//            };
-//        }
     }
 }
 
@@ -153,12 +145,6 @@ public class AIDataGenerator {
 
 
 
-
-
-
-
-
-
 //package com.deep.qa.swaglabs_testing.utils;
 //
 //import org.json.JSONArray;
@@ -169,46 +155,66 @@ public class AIDataGenerator {
 //import java.net.HttpURLConnection;
 //import java.net.URL;
 //import java.nio.charset.StandardCharsets;
-//
+
 //public class AIDataGenerator {
 //
 //    public static Object[][] generateLoginData() {
 //
-//    	
-//    	System.out.println("🔥 CALLING OPENAI API...");
-//    	
-//    	
-//    	
 //        try {
+//            System.out.println("🔥 CALLING OPENAI API...");
+//
 //            String apiKey = System.getenv("OPENAI_API_KEY");
+//            
+//            System.out.println("API KEY = " + apiKey);
 //
 //            if (apiKey == null || apiKey.isEmpty()) {
-//                throw new RuntimeException("OPENAI_API_KEY not set");
+//                throw new RuntimeException("API KEY missing");
 //            }
 //
-//            URL url = new URL("https://api.openai.com/v1/chat/completions");
+//            //URL url = new URL("https://api.openai.com/v1/chat/completions");
+//            //URL url = new URL("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey);
+//           
+//            //URL url = new URL("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=" + apiKey);
+//            URL url = new URL("https://generativelanguage.googleapis.com/v1beta/models?key=" + apiKey);
 //            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 //
 //            conn.setRequestMethod("POST");
-//            conn.setRequestProperty("Authorization", "Bearer " + apiKey);
+//            //conn.setRequestProperty("Authorization", "Bearer " + apiKey);
 //            conn.setRequestProperty("Content-Type", "application/json");
 //            conn.setDoOutput(true);
 //
 //            String prompt =
 //                    "Generate EXACTLY 3 login test cases in STRICT JSON array format. " +
-//                    "Each object must have: username (string), password (string), expected (SUCCESS or FAIL). " +
-//                    "Return ONLY JSON. No explanation.";
+//                    "Each object must contain username, password, expected (SUCCESS or FAIL). " +
+//                    "Return ONLY JSON.";
 //
+////            String body = "{"
+////                    + "\"model\":\"gpt-3.5-turbo\","
+////                    + "\"messages\":[{\"role\":\"user\",\"content\":\"" + prompt + "\"}]"
+////                    + "}";
+//            
 //            String body = "{"
-//                    + "\"model\":\"gpt-4o-mini\","
-//                    + "\"messages\":[{\"role\":\"user\",\"content\":\"" + prompt + "\"}]"
+//                    + "\"contents\":[{"
+//                    + "\"parts\":[{"
+//                    + "\"text\":\"" + prompt + "\""
+//                    + "}]"
+//                    + "}]"
 //                    + "}";
+//            
 //
 //            conn.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
+//            
+//            System.out.println("RESPONSE CODE = " + conn.getResponseCode());
 //
-//            BufferedReader br = new BufferedReader(
-//                    new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8)
-//            );
+//            int responseCode = conn.getResponseCode();
+//
+//            BufferedReader br;
+//
+//            if (responseCode >= 200 && responseCode < 300) {
+//                br = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
+//            } else {
+//                br = new BufferedReader(new InputStreamReader(conn.getErrorStream(), StandardCharsets.UTF_8));
+//            }
 //
 //            StringBuilder response = new StringBuilder();
 //            String line;
@@ -218,6 +224,19 @@ public class AIDataGenerator {
 //            }
 //
 //            br.close();
+//            
+//            
+//					            
+//					            System.out.println("🔥 RAW API RESPONSE:");
+//					            System.out.println(response.toString());
+//            
+//            
+//            
+//            
+//
+//            if (responseCode != 200) {
+//                throw new RuntimeException("API failed: " + response.toString());
+//            }
 //
 //            JSONObject json = new JSONObject(response.toString());
 //
@@ -225,6 +244,15 @@ public class AIDataGenerator {
 //                    .getJSONObject(0)
 //                    .getJSONObject("message")
 //                    .getString("content");
+//
+//            // 🔥 CLEAN JSON (remove weird formatting if AI adds text)
+//            content = content.trim();
+//
+//            if (!content.startsWith("[")) {
+//                int start = content.indexOf("[");
+//                int end = content.lastIndexOf("]");
+//                content = content.substring(start, end + 1);
+//            }
 //
 //            JSONArray arr = new JSONArray(content);
 //
@@ -239,109 +267,250 @@ public class AIDataGenerator {
 //            }
 //
 //            return data;
-//
+//            
+//            
+//            
 //        } catch (Exception e) {
-//            throw new RuntimeException("AI Data generation failed", e);
-//        }
-//    }
-//}
 //
-
-
-
-
-
-
-
-
-//package com.deep.qa.swaglabs_testing.utils;
+//            System.out.println("🔥 OPENAI API CALL FAILED");
 //
-//import org.json.JSONArray;
-//import org.json.JSONObject;
+//            System.out.println("Reason: " + e.getMessage());
 //
-//import java.io.BufferedReader;
-//import java.io.File;
-//import java.io.InputStreamReader;
-//import java.net.HttpURLConnection;
-//import java.net.URL;
-//import java.nio.charset.StandardCharsets;
-//import java.nio.file.Files;
-//import java.nio.file.Paths;
-//
-//public class AIDataGenerator {
-//
-//    private static final String FILE_PATH =
-//            System.getProperty("user.dir") +
-//            "/src/test/resources/testdata/loginData.json";
-//
-//    public static void generateIfNeeded() {
-//
-//        File file = new File(FILE_PATH);
-//
-//        if (file.exists() && file.length() > 0) {
-//            System.out.println("AI Data already exists. Skipping API call.");
-//            return;
-//        }
-//
-//        try {
-//            String apiKey = System.getenv("OPENAI_API_KEY");
-//
-//            if (apiKey == null || apiKey.isEmpty()) {
-//                throw new RuntimeException("OPENAI_API_KEY not set in environment");
+//            if (e.getMessage() != null && e.getMessage().contains("insufficient_quota")) {
+//                System.out.println("❌ ISSUE: OpenAI quota exhausted (billing required or free credits ended)");
 //            }
 //
-//            URL url = new URL("https://api.openai.com/v1/chat/completions");
-//            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+//            System.out.println("➡️ Switching to fallback test data so tests can continue");
 //
-//            conn.setRequestMethod("POST");
-//            conn.setRequestProperty("Authorization", "Bearer " + apiKey);
-//            conn.setRequestProperty("Content-Type", "application/json");
-//            conn.setDoOutput(true);
-//
-//            String prompt =
-//            	    "Generate 4 login test cases in STRICT JSON array format. " +
-//            	    "Each object must contain: username (string), password (string), expected (string: SUCCESS or FAIL only). " +
-//            	    "Example: [{\"username\":\"abc\",\"password\":\"123\",\"expected\":\"SUCCESS\"}]";
-//
-//            String body = "{"
-//                    + "\"model\":\"gpt-4o-mini\","
-//                    + "\"messages\":[{\"role\":\"user\",\"content\":\"" + prompt + "\"}]"
-//                    + "}";
-//
-//            conn.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
-//
-//            BufferedReader br = new BufferedReader(
-//                    new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8)
-//            );
-//
-//            StringBuilder response = new StringBuilder();
-//            String line;
-//
-//            while ((line = br.readLine()) != null) {
-//                response.append(line);
-//            }
-//
-//            br.close();
-//
-//            JSONObject json = new JSONObject(response.toString());
-//
-//            String content = json.getJSONArray("choices")
-//                    .getJSONObject(0)
-//                    .getJSONObject("message")
-//                    .getString("content");
-//
-//            // 🔥 CLEAN WRITE (NO GUAVA, NO CONFUSION)
-//            Files.writeString(
-//                    Paths.get(FILE_PATH),
-//                    content,
-//                    StandardCharsets.UTF_8
-//            );
-//
-//            System.out.println("AI Data saved to file");
-//
-//        } catch (Exception e) {
-//            System.out.println("AI generation failed, using existing data");
 //            e.printStackTrace();
+//
+//            return new Object[][]{
+//                    {"standard_user", "secret_sauce", "SUCCESS"},
+//                    {"locked_out_user", "secret_sauce", "FAIL"},
+//                    {"problem_user", "secret_sauce", "SUCCESS"}
+//            };
 //        }
+//            
+//            
+//            
+//
+////        } catch (Exception e) {
+////
+////            System.out.println("⚠️ AI FAILED → USING FALLBACK DATA");
+////            e.printStackTrace();
+////                      
+////
+////            // 🔥 FALLBACK (GUARANTEED WORKING)
+////            return new Object[][]{
+////                    {"standard_user", "secret_sauce", "SUCCESS"},
+////                    {"locked_out_user", "secret_sauce", "FAIL"},
+////                    {"problem_user", "secret_sauce", "SUCCESS"}
+////            };
+////        }
 //    }
 //}
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+////package com.deep.qa.swaglabs_testing.utils;
+////
+////import org.json.JSONArray;
+////import org.json.JSONObject;
+////
+////import java.io.BufferedReader;
+////import java.io.InputStreamReader;
+////import java.net.HttpURLConnection;
+////import java.net.URL;
+////import java.nio.charset.StandardCharsets;
+////
+////public class AIDataGenerator {
+////
+////    public static Object[][] generateLoginData() {
+////
+////    	
+////    	System.out.println("🔥 CALLING OPENAI API...");
+////    	
+////    	
+////    	
+////        try {
+////            String apiKey = System.getenv("OPENAI_API_KEY");
+////
+////            if (apiKey == null || apiKey.isEmpty()) {
+////                throw new RuntimeException("OPENAI_API_KEY not set");
+////            }
+////
+////            URL url = new URL("https://api.openai.com/v1/chat/completions");
+////            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+////
+////            conn.setRequestMethod("POST");
+////            conn.setRequestProperty("Authorization", "Bearer " + apiKey);
+////            conn.setRequestProperty("Content-Type", "application/json");
+////            conn.setDoOutput(true);
+////
+////            String prompt =
+////                    "Generate EXACTLY 3 login test cases in STRICT JSON array format. " +
+////                    "Each object must have: username (string), password (string), expected (SUCCESS or FAIL). " +
+////                    "Return ONLY JSON. No explanation.";
+////
+////            String body = "{"
+////                    + "\"model\":\"gpt-4o-mini\","
+////                    + "\"messages\":[{\"role\":\"user\",\"content\":\"" + prompt + "\"}]"
+////                    + "}";
+////
+////            conn.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
+////
+////            BufferedReader br = new BufferedReader(
+////                    new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8)
+////            );
+////
+////            StringBuilder response = new StringBuilder();
+////            String line;
+////
+////            while ((line = br.readLine()) != null) {
+////                response.append(line);
+////            }
+////
+////            br.close();
+////
+////            JSONObject json = new JSONObject(response.toString());
+////
+////            String content = json.getJSONArray("choices")
+////                    .getJSONObject(0)
+////                    .getJSONObject("message")
+////                    .getString("content");
+////
+////            JSONArray arr = new JSONArray(content);
+////
+////            Object[][] data = new Object[arr.length()][3];
+////
+////            for (int i = 0; i < arr.length(); i++) {
+////                JSONObject obj = arr.getJSONObject(i);
+////
+////                data[i][0] = obj.getString("username");
+////                data[i][1] = obj.getString("password");
+////                data[i][2] = obj.getString("expected");
+////            }
+////
+////            return data;
+////
+////        } catch (Exception e) {
+////            throw new RuntimeException("AI Data generation failed", e);
+////        }
+////    }
+////}
+////
+//
+//
+//
+//
+//
+//
+//
+//
+////package com.deep.qa.swaglabs_testing.utils;
+////
+////import org.json.JSONArray;
+////import org.json.JSONObject;
+////
+////import java.io.BufferedReader;
+////import java.io.File;
+////import java.io.InputStreamReader;
+////import java.net.HttpURLConnection;
+////import java.net.URL;
+////import java.nio.charset.StandardCharsets;
+////import java.nio.file.Files;
+////import java.nio.file.Paths;
+////
+////public class AIDataGenerator {
+////
+////    private static final String FILE_PATH =
+////            System.getProperty("user.dir") +
+////            "/src/test/resources/testdata/loginData.json";
+////
+////    public static void generateIfNeeded() {
+////
+////        File file = new File(FILE_PATH);
+////
+////        if (file.exists() && file.length() > 0) {
+////            System.out.println("AI Data already exists. Skipping API call.");
+////            return;
+////        }
+////
+////        try {
+////            String apiKey = System.getenv("OPENAI_API_KEY");
+////
+////            if (apiKey == null || apiKey.isEmpty()) {
+////                throw new RuntimeException("OPENAI_API_KEY not set in environment");
+////            }
+////
+////            URL url = new URL("https://api.openai.com/v1/chat/completions");
+////            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+////
+////            conn.setRequestMethod("POST");
+////            conn.setRequestProperty("Authorization", "Bearer " + apiKey);
+////            conn.setRequestProperty("Content-Type", "application/json");
+////            conn.setDoOutput(true);
+////
+////            String prompt =
+////            	    "Generate 4 login test cases in STRICT JSON array format. " +
+////            	    "Each object must contain: username (string), password (string), expected (string: SUCCESS or FAIL only). " +
+////            	    "Example: [{\"username\":\"abc\",\"password\":\"123\",\"expected\":\"SUCCESS\"}]";
+////
+////            String body = "{"
+////                    + "\"model\":\"gpt-4o-mini\","
+////                    + "\"messages\":[{\"role\":\"user\",\"content\":\"" + prompt + "\"}]"
+////                    + "}";
+////
+////            conn.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
+////
+////            BufferedReader br = new BufferedReader(
+////                    new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8)
+////            );
+////
+////            StringBuilder response = new StringBuilder();
+////            String line;
+////
+////            while ((line = br.readLine()) != null) {
+////                response.append(line);
+////            }
+////
+////            br.close();
+////
+////            JSONObject json = new JSONObject(response.toString());
+////
+////            String content = json.getJSONArray("choices")
+////                    .getJSONObject(0)
+////                    .getJSONObject("message")
+////                    .getString("content");
+////
+////            // 🔥 CLEAN WRITE (NO GUAVA, NO CONFUSION)
+////            Files.writeString(
+////                    Paths.get(FILE_PATH),
+////                    content,
+////                    StandardCharsets.UTF_8
+////            );
+////
+////            System.out.println("AI Data saved to file");
+////
+////        } catch (Exception e) {
+////            System.out.println("AI generation failed, using existing data");
+////            e.printStackTrace();
+////        }
+////    }
+////}
