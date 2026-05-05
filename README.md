@@ -1,4 +1,4 @@
-# SwagLabs Test Automation Framework
+# SwagLabs Test Automation Framework using GenAI
 
 ## 📌 Overview
 
