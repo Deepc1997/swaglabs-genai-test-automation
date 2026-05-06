@@ -24,22 +24,21 @@ public class AIDataGenerator {
                 throw new RuntimeException("API KEY missing");
             }
 
-            // ✅ CORRECT GEMINI ENDPOINT
-            //URL url = new URL("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey.trim());
             URL url = new URL(
-            	    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" 
-            	    + apiKey.trim()
-            	);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey
+            );
 
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setDoOutput(true);
 
             String prompt =
-                    "Generate EXACTLY 3 login test cases in STRICT JSON ARRAY format. " +
-                    "Each object must contain: username, password, expected (SUCCESS or FAIL). " +
-                    "Return ONLY JSON. No explanation.";
+                    "Generate exactly 3 SwagLabs login test inputs in JSON array format. " +
+                    //"1st user should always be ABCDE" +
+                    //"Keep users completely random, not from the users provided by SwagLabs website" +
+                    "Each object must contain ONLY username and password. " +
+                    "Do NOT include expected result. Return ONLY JSON array.";
 
             String body = "{"
                     + "\"contents\":[{"
@@ -52,20 +51,16 @@ public class AIDataGenerator {
             conn.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
 
             int responseCode = conn.getResponseCode();
-
             System.out.println("RESPONSE CODE = " + responseCode);
 
-            BufferedReader br;
-
-            if (responseCode >= 200 && responseCode < 300) {
-                br = new BufferedReader(
-                        new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8)
-                );
-            } else {
-                br = new BufferedReader(
-                        new InputStreamReader(conn.getErrorStream(), StandardCharsets.UTF_8)
-                );
-            }
+            BufferedReader br = new BufferedReader(
+                    new InputStreamReader(
+                            responseCode >= 200 && responseCode < 300
+                                    ? conn.getInputStream()
+                                    : conn.getErrorStream(),
+                            StandardCharsets.UTF_8
+                    )
+            );
 
             StringBuilder response = new StringBuilder();
             String line;
@@ -83,58 +78,286 @@ public class AIDataGenerator {
                 throw new RuntimeException("API failed: " + response);
             }
 
-            // ✅ GEMINI RESPONSE PARSING (IMPORTANT FIX)
             JSONObject json = new JSONObject(response.toString());
 
-            String content = json
-                    .getJSONArray("candidates")
+            String content = json.getJSONArray("candidates")
                     .getJSONObject(0)
                     .getJSONObject("content")
                     .getJSONArray("parts")
                     .getJSONObject(0)
                     .getString("text");
 
-            content = content.trim();
-
-            // safety cleanup (in case AI adds extra text)
-            if (!content.startsWith("[")) {
-                int start = content.indexOf("[");
-                int end = content.lastIndexOf("]");
-                if (start != -1 && end != -1) {
-                    content = content.substring(start, end + 1);
-                }
-            }
+            // extract JSON array safely
+            int start = content.indexOf("[");
+            int end = content.lastIndexOf("]");
+            content = content.substring(start, end + 1);
 
             JSONArray arr = new JSONArray(content);
 
-            Object[][] data = new Object[arr.length()][3];
+            Object[][] data = new Object[arr.length()][2];
 
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject obj = arr.getJSONObject(i);
 
                 data[i][0] = obj.getString("username");
                 data[i][1] = obj.getString("password");
-                data[i][2] = obj.getString("expected");
             }
 
             return data;
 
         } catch (Exception e) {
 
-            System.out.println("🔥 AI API FAILED → USING FALLBACK DATA");
+            System.out.println("🔥 AI FAILED → USING FALLBACK DATA");
             System.out.println("Reason: " + e.getMessage());
 
             return new Object[][]{
-                    {"standard_user", "secret_sauce", "SUCCESS"},
-                    {"locked_out_user", "secret_sauce", "FAIL"},
-                    {"problem_user", "secret_sauce", "SUCCESS"}
+                    {"standard_user", "secret_sauce"},
+                    {"locked_out_user", "secret_sauce"},
+                    {"error_user", "secret_sauce"}
             };
         }
     }
+
+    
+    public static String callGeminiAPI(String prompt) {
+        try {
+            String apiKey = System.getenv("GEMINI_API_KEY");
+
+            if (apiKey == null || apiKey.isEmpty()) {
+                throw new RuntimeException("API KEY missing");
+            }
+
+            URL url = new URL(
+                    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey
+            );
+
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+
+            String body = "{"
+                    + "\"contents\":[{"
+                    + "\"parts\":[{"
+                    + "\"text\":\"" + prompt + "\""
+                    + "}]"
+                    + "}]"
+                    + "}";
+
+            conn.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
+
+            int responseCode = conn.getResponseCode();
+
+            BufferedReader br = new BufferedReader(
+                    new InputStreamReader(
+                            responseCode >= 200 && responseCode < 300
+                                    ? conn.getInputStream()
+                                    : conn.getErrorStream(),
+                            StandardCharsets.UTF_8
+                    )
+            );
+
+            StringBuilder response = new StringBuilder();
+            String line;
+
+            while ((line = br.readLine()) != null) {
+                response.append(line);
+            }
+
+            br.close();
+
+            if (responseCode != 200) {
+                throw new RuntimeException("API failed: " + response);
+            }
+
+            JSONObject json = new JSONObject(response.toString());
+
+            return json.getJSONArray("candidates")
+                    .getJSONObject(0)
+                    .getJSONObject("content")
+                    .getJSONArray("parts")
+                    .getJSONObject(0)
+                    .getString("text");
+
+        } catch (Exception e) {
+            throw new RuntimeException("Gemini API failed: " + e.getMessage());
+        }
+    }
+    
+
+    public static String generateNextTestSuggestions() {
+        try {
+            String prompt =
+                    "You are a QA automation expert. " +
+                    "Suggest 3 test scenarios after a successful login in SwagLabs. " +
+                    "Keep them short and clear. Example: Add item to cart, Remove item, Checkout flow. " +
+                    "Return as plain text, numbered list.";
+
+            String response = callGeminiAPI(prompt);
+
+            System.out.println("🤖 AI SUGGESTIONS:\n" + response);
+
+            return response;
+
+        } catch (Exception e) {
+            System.out.println("AI suggestion failed, skipping..." + e.getMessage());
+            return "AI suggestion not available.";
+        }
+    }
+
 }
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+//package com.deep.qa.swaglabs_testing.utils;
+//
+//import org.json.JSONArray;
+//import org.json.JSONObject;
+//
+//import java.io.BufferedReader;
+//import java.io.InputStreamReader;
+//import java.net.HttpURLConnection;
+//import java.net.URL;
+//import java.nio.charset.StandardCharsets;
+//
+//public class AIDataGenerator {
+//
+//    public static Object[][] generateLoginData() {
+//
+//        try {
+//            System.out.println("🔥 CALLING GEMINI API...");
+//
+//            String apiKey = System.getenv("GEMINI_API_KEY");
+//
+//            System.out.println("API KEY = " + apiKey);
+//
+//            if (apiKey == null || apiKey.isEmpty()) {
+//                throw new RuntimeException("API KEY missing");
+//            }
+//
+//            // ✅ CORRECT GEMINI ENDPOINT
+//            //URL url = new URL("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey.trim());
+//            URL url = new URL(
+//            	    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" 
+//            	    + apiKey.trim()
+//            	);
+//            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+//
+//            conn.setRequestMethod("POST");
+//            conn.setRequestProperty("Content-Type", "application/json");
+//            conn.setDoOutput(true);
+//
+//            String prompt =
+//                    "Generate EXACTLY 3 login test cases in STRICT JSON ARRAY format. " +
+//                    "Each object must contain: username, password, expected (SUCCESS or FAIL). " +
+//                    "Return ONLY JSON. No explanation.";
+//
+//            String body = "{"
+//                    + "\"contents\":[{"
+//                    + "\"parts\":[{"
+//                    + "\"text\":\"" + prompt + "\""
+//                    + "}]"
+//                    + "}]"
+//                    + "}";
+//
+//            conn.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
+//
+//            int responseCode = conn.getResponseCode();
+//
+//            System.out.println("RESPONSE CODE = " + responseCode);
+//
+//            BufferedReader br;
+//
+//            if (responseCode >= 200 && responseCode < 300) {
+//                br = new BufferedReader(
+//                        new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8)
+//                );
+//            } else {
+//                br = new BufferedReader(
+//                        new InputStreamReader(conn.getErrorStream(), StandardCharsets.UTF_8)
+//                );
+//            }
+//
+//            StringBuilder response = new StringBuilder();
+//            String line;
+//
+//            while ((line = br.readLine()) != null) {
+//                response.append(line);
+//            }
+//
+//            br.close();
+//
+//            System.out.println("🔥 RAW RESPONSE:");
+//            System.out.println(response);
+//
+//            if (responseCode != 200) {
+//                throw new RuntimeException("API failed: " + response);
+//            }
+//
+//            // ✅ GEMINI RESPONSE PARSING (IMPORTANT FIX)
+//            JSONObject json = new JSONObject(response.toString());
+//
+//            String content = json
+//                    .getJSONArray("candidates")
+//                    .getJSONObject(0)
+//                    .getJSONObject("content")
+//                    .getJSONArray("parts")
+//                    .getJSONObject(0)
+//                    .getString("text");
+//
+//            content = content.trim();
+//
+//            // safety cleanup (in case AI adds extra text)
+//            if (!content.startsWith("[")) {
+//                int start = content.indexOf("[");
+//                int end = content.lastIndexOf("]");
+//                if (start != -1 && end != -1) {
+//                    content = content.substring(start, end + 1);
+//                }
+//            }
+//
+//            JSONArray arr = new JSONArray(content);
+//
+//            Object[][] data = new Object[arr.length()][3];
+//
+//            for (int i = 0; i < arr.length(); i++) {
+//                JSONObject obj = arr.getJSONObject(i);
+//
+//                data[i][0] = obj.getString("username");
+//                data[i][1] = obj.getString("password");
+//                data[i][2] = obj.getString("expected");
+//            }
+//
+//            return data;
+//
+//        } catch (Exception e) {
+//
+//            System.out.println("🔥 AI API FAILED → USING FALLBACK DATA");
+//            System.out.println("Reason: " + e.getMessage());
+//
+//            return new Object[][]{
+//                    {"standard_user", "secret_sauce", "SUCCESS"},
+//                    {"locked_out_user", "secret_sauce", "FAIL"},
+//                    {"problem_user", "secret_sauce", "SUCCESS"}
+//            };
+//        }
+//    }
+//}
+//
+//
+//
 
 
 

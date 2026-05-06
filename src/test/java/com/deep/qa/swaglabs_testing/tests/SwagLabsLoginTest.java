@@ -7,7 +7,10 @@ import com.deep.qa.swaglabs_testing.utils.AIDataGenerator;
 
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
+//import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
+
+//@Listeners(com.deep.qa.swaglabs_testing.listeners.TestResultListener.class)
 
 public class SwagLabsLoginTest extends BaseTest {
 
@@ -15,9 +18,11 @@ public class SwagLabsLoginTest extends BaseTest {
     public Object[][] getLoginData() {
         return AIDataGenerator.generateLoginData();
     }
-
+    
+    
+    
     @Test(dataProvider = "loginData")
-    public void loginTest(String username, String password, String expected) {
+    public void loginTest(String username, String password) {
 
         getTest().info("User: " + username);
 
@@ -28,32 +33,128 @@ public class SwagLabsLoginTest extends BaseTest {
 
         boolean actualResult = homePage.isLoginSuccessful();
 
-        getTest().info("Expected: " + expected);
-        getTest().info("Actual: " + actualResult);
-        
-        
-        
-        
-        getTest().info("User: " + username);
-        System.out.println("AI DATA → " + username + " | " + password + " | " + expected);
-        
-        
-        
+        // 🔥 FIX: Define expected behavior yourself (NOT AI)
+        boolean expectedResult = isLoginExpectedToSucceed(username);
 
-        if (expected.equalsIgnoreCase("SUCCESS")) {
-            Assert.assertTrue(actualResult, "Login should succeed for: " + username);
-        } else {
-            Assert.assertFalse(actualResult, "Login should fail for: " + username);
-        }
+        getTest().info("Expected: " + expectedResult);
+        getTest().info("Actual: " + actualResult);
+
+        System.out.println("AI DATA → " + username + " | " + password);
+
+        Assert.assertEquals(
+                actualResult,
+                expectedResult,
+                "Login mismatch for user: " + username
+        );
 
         getTest().pass("Test completed: " + username);
+        
+        
+        if (actualResult) {
+            String suggestions = AIDataGenerator.generateNextTestSuggestions();
+            
+            getTest().info("🤖 AI Suggested Next Tests:\n" + suggestions);
+            //System.out.println("🤖 AI Suggested Next Tests:\n" + suggestions);
+        }
+        
+        
     }
+    
+    
+    
+    private boolean isLoginExpectedToSucceed(String username) {
+
+        return username.equals("standard_user")
+                || username.equals("problem_user")
+                || username.equals("performance_glitch_user");
+    }
+    
+    
+    
 
     @Test
     public void sanityLoginCheck() {
         System.out.println("LOGIN CLASS LOADED");
     }
 }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+//    @Test(dataProvider = "loginData")
+//    public void loginTest(String username, String password) {
+//
+//        getTest().info("User: " + username);
+//
+//        LoginPage loginPage = new LoginPage(getDriver());
+//        HomePage homePage = new HomePage(getDriver());
+//
+//        loginPage.login(username, password);
+//
+//        boolean actualResult = homePage.isLoginSuccessful();
+//
+//        getTest().info("Actual Result: " + actualResult);
+//
+//        System.out.println("AI DATA → " + username + " | " + password);
+//
+//        // 🔥 ASSERTION LOGIC (based on known SwagLabs behavior)
+//        if (username.equals("locked_out_user")) {
+//            Assert.assertFalse(actualResult, "Locked out user should NOT be able to login");
+//            getTest().info("Expected: FAIL (locked user)");
+//        } else {
+//            Assert.assertTrue(actualResult, "Valid user should be able to login");
+//            getTest().info("Expected: SUCCESS (valid user)");
+//        }
+//
+//        getTest().pass("Test completed: " + username);
+//    }
+    
+    
+    
+
+//    @Test(dataProvider = "loginData")
+//    public void loginTest(String username, String password) {
+//
+//        getTest().info("User: " + username);
+//
+//        LoginPage loginPage = new LoginPage(getDriver());
+//        HomePage homePage = new HomePage(getDriver());
+//
+//        loginPage.login(username, password);
+//
+//        boolean actualResult = homePage.isLoginSuccessful();
+//
+//        getTest().info("Expected: " + expected);
+//        getTest().info("Actual: " + actualResult);
+//        
+//        
+//        
+//        
+//        getTest().info("User: " + username);
+//        System.out.println("AI DATA → " + username + " | " + password + " | " + expected);
+//        
+//        
+//        
+//
+//        if (expected.equalsIgnoreCase("SUCCESS")) {
+//            Assert.assertTrue(actualResult, "Login should succeed for: " + username);
+//        } else {
+//            Assert.assertFalse(actualResult, "Login should fail for: " + username);
+//        }
+//
+//        getTest().pass("Test completed: " + username);
+//    }
 
 
 
