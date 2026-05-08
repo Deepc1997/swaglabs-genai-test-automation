@@ -2,14 +2,22 @@
 
 ## 📌 Overview
 
-This is a UI test automation framework for the **SwagLabs application** built using Selenium, TestNG, and Maven.
+This project is a Selenium + TestNG-based test automation framework for the SwagLabs application, enhanced with Generative AI (Gemini API) capabilities. It demonstrates how AI can be integrated into QA workflows for test data generation, test case suggestions, and basic test result analysis.
 
-The framework demonstrates:
-- Page Object Model (POM) design
-- Data-driven testing
-- CI/CD integration using GitHub Actions
-- AI-assisted test data generation using Google Gemini API
-- CI-safe fallback mechanism for deterministic execution
+The framework is built as a personal QA engineering project to simulate real-world automation scenarios using modern AI-assisted testing approaches.
+
+---
+
+## Key Features
+
+- Selenium WebDriver-based UI automation
+- TestNG test execution framework
+- Page Object Model (POM) design pattern
+- AI-generated test data using Gemini API
+- AI-generated test suggestions after successful flows
+- AI-based basic test result analysis
+- Fallback mechanism when AI API fails or quota is exceeded
+- Data-driven testing using TestNG DataProvider
 
 ---
 
@@ -18,76 +26,37 @@ The framework demonstrates:
 - Selenium WebDriver
 - TestNG
 - Maven
-- Google Gemini API (AI test data generation)
-- GitHub Actions (CI/CD)
+- Google Gemini API (Generative AI)
+- GitHub Actions (CI - Continuous Integration)
 - Extent Reports
+- JSON (org.json)
 
 ---
 
-## ✨ Key Features
+## AI Integration Design
 
-### 🧱 Framework Design
-- Page Object Model (POM) architecture
-- Clean separation of test logic and page actions
-- Reusable utilities and base test structure
+### 1. AI Test Data Generation
+- Gemini API generates 3 login credential sets per execution
+- JSON response is parsed into TestNG DataProvider
+- If API fails, fallback static users are used
 
-### 📊 Data-Driven Testing
-- Test data provided via TestNG DataProvider
-- Dynamic login test cases generated using AI (Gemini API)
-- JSON-based structured test input format
+### 2. AI Test Suggestions
+- After successful login execution, AI generates post-login test scenarios
+- Examples: cart validation, sorting, product navigation
 
----
-
-### 🤖 AI Integration (GenAI in Testing)
-- Uses Google Gemini API to generate login test scenarios dynamically
-- AI generates structured JSON test data:
-  - username
-  - password
-  - expected result (SUCCESS / FAIL)
-
-Example AI output:
-
-```json
-[
-  {
-    "username": "admin",
-    "password": "password123",
-    "expected": "SUCCESS"
-  },
-  {
-    "username": "locked_user",
-    "password": "secret",
-    "expected": "FAIL"
-  }
-]
-```
+### 3. AI Test Analysis
+- Each test compares actual vs expected result
+- AI provides root-cause style feedback
+- Suggests improvements like missing negative or edge test coverage
 
 ---
 
-## 🔁 CI/CD Safe Design
+## 🔁 CI Safe Design
 - GitHub Actions pipeline runs on every push to `main`
 - CI uses fallback static test data instead of AI API
 - Ensures stable and repeatable builds
 - Avoids API rate limits and external dependency failures
-- Local runs use live Gemini API for dynamic test generation
-
----
-
-## 🚀 How It Works
-
-### Local Execution Flow
-1. TestNG triggers DataProvider
-2. `AIDataGenerator` calls Gemini API
-3. AI returns structured JSON test cases
-4. Tests execute dynamically generated scenarios
-
----
-
-### CI Execution Flow (GitHub Actions)
-1. TestNG triggers DataProvider
-2. AI API call is skipped or fails safely
-3. Framework switches to fallback dataset
-4. Tests execute deterministically (stable build)
+- Local runs use live Gemini API for dynamic test data generation
 
 ---
 
@@ -110,22 +79,8 @@ After execution, test reports are generated at:
 These reports include:
 - Test execution status (PASS/FAIL)
 - Step-level logs from Extent Reports
-- Screenshots for failed test cases (if enabled)
+- Screenshots for failed test cases
 - Maven Surefire execution summary
-
----
-
-## 🧪 Test Coverage
-
-This framework covers **SwagLabs login functionality testing** using multiple scenarios:
-
-- Valid user login → expected SUCCESS
-- Invalid user credentials → expected FAIL
-- Locked-out user validation
-- Problem user behavior validation
-- Negative testing for incorrect credentials
-
-Coverage is driven by **data-driven test execution**, where inputs are dynamically generated (locally via AI or fallback dataset in CI).
 
 ---
 
@@ -143,6 +98,9 @@ src/main/java
 │
 ├── reports
 │   ├── ExtentManager.java
+│
+├── listeners
+│   ├── TestResultListener.java
 │
 ├── utils
 │   ├── ScreenshotUtil.java
@@ -166,22 +124,35 @@ pom.xml
 
 ---
 
-## ⚠️ Design Notes
+## AI Failure Handling
 
-- AI is used only for **test data generation (not validation logic)**
-- Test assertions remain fully deterministic and application-driven
-- CI pipeline uses fallback data to ensure stable and repeatable execution
-- Local environment supports dynamic AI-generated test cases
-- Framework is designed to balance **experimentation (AI)** and **stability (CI)**
+If Gemini API fails due to:
+- Rate limit (429)
+- Quota exhaustion
+- Network issues
+
+Then:
+- Framework switches to fallback dataset
+- Execution continues without stopping suite
+
 
 ---
 
-## 📌 Summary
+## Known Limitations
 
-This framework demonstrates:
+- Free-tier Gemini API has strict request limits
+- AI responses may vary under load
+- Chrome DevTools warnings may appear due to version mismatch
+- AI is assistive, not authoritative for test assertions
 
-- Standard Selenium automation using Page Object Model (POM)
-- Data-driven testing with TestNG DataProvider
-- Integration of Generative AI (Gemini API) for dynamic test data generation
-- CI/CD-safe architecture using fallback mechanisms for stable execution
-- Practical implementation of modern QA engineering practices combining automation and AI
+---
+
+## Future Enhancements
+
+- Retry mechanism for failed AI API calls
+- Integration with Extent / Allure reporting
+- AI-based failure classification (UI / data / backend)
+- Smarter test prioritization using AI signals
+- Rule-based + AI hybrid assertion engine
+
+---

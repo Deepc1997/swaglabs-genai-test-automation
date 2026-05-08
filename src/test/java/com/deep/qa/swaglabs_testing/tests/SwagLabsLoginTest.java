@@ -7,10 +7,11 @@ import com.deep.qa.swaglabs_testing.utils.AIDataGenerator;
 
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
-//import org.testng.annotations.Listeners;
+import org.testng.annotations.Listeners;
+
 import org.testng.annotations.Test;
 
-//@Listeners(com.deep.qa.swaglabs_testing.listeners.TestResultListener.class)
+@Listeners(com.deep.qa.swaglabs_testing.listeners.TestResultListener.class)
 
 public class SwagLabsLoginTest extends BaseTest {
 
