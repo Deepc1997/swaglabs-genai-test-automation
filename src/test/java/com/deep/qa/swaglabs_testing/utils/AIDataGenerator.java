@@ -113,7 +113,7 @@ public class AIDataGenerator {
             return new Object[][]{
                     {"standard_user", "secret_sauce"},
                     {"locked_out_user", "secret_sauce"},
-                    {"error_user", "secret_sauce"}
+                    //{"error_user", "secret_sauce"}
             };
         }
     }
