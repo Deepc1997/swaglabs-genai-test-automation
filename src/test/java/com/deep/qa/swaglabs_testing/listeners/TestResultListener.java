@@ -19,19 +19,39 @@ public class TestResultListener implements ITestListener {
 
     private void sendToAI(ITestResult result, String status) {
 
-        String testName = result.getMethod().getMethodName();
+    	try {
 
-        String prompt =
-                "You are a QA automation expert.\n" +
-                "Analyze this test execution:\n" +
-                "Test: " + testName + "\n" +
-                "Status: " + status + "\n" +
-                "Give root cause + improvement suggestion in 3 lines max.";
+            String prompt =
+                    "Analyze this QA automation result. " +
+                    "Test Name: " + result.getName() +
+                    ". Status: " + status;
 
-        String analysis = AIDataGenerator.callGeminiAPI(prompt);
+            String response = AIDataGenerator.callGeminiAPI(prompt);
 
-        System.out.println("\n🤖 AI TEST ANALYSIS:");
-        System.out.println(analysis);
+            System.out.println("\n🤖 AI REPORT ANALYSIS:");
+            System.out.println(response);
+
+        } catch (Exception e) {
+
+            System.out.println("\n🤖 AI REPORT ANALYSIS SKIPPED");
+            System.out.println("Reason: " + e.getMessage());
+        }
+    	
+    	
+    	
+//        String testName = result.getMethod().getMethodName();
+//
+//        String prompt =
+//                "You are a QA automation expert.\n" +
+//                "Analyze this test execution:\n" +
+//                "Test: " + testName + "\n" +
+//                "Status: " + status + "\n" +
+//                "Give root cause + improvement suggestion in 3 lines max.";
+//
+//        String analysis = AIDataGenerator.callGeminiAPI(prompt);
+//
+//        System.out.println("\n🤖 AI TEST ANALYSIS:");
+//        System.out.println(analysis);
     }
 
     @Override
